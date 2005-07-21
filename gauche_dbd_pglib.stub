@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: gauche_dbd_pglib.stub,v 1.1 2005/07/19 00:45:42 shiro Exp $
+;; $Id: gauche_dbd_pglib.stub,v 1.2 2005/07/21 08:19:06 nel Exp $
 
 "
 #include \"gauche_dbd_pg.h\"
@@ -63,5 +63,8 @@
 (define-cproc pq-get-value (row_id::<int> col_id::<int> &optional result)
   "SCM_RETURN(Scm_PqGetValue(row_id, col_id, result));")
 
-(define-cproc pq-finish(&optional connection)
+(define-cproc pq-finish (&optional connection)
   "SCM_RETURN(Scm_PqFinish(connection));")
+
+(define-cproc pq-fname (result index::<int>)
+  "SCM_RETURN(Scm_Pqfname (result, index));")

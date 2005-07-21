@@ -5,7 +5,7 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: gauche_dbd_pg.c,v 1.1 2005/07/19 00:45:42 shiro Exp $
+ * $Id: gauche_dbd_pg.c,v 1.2 2005/07/21 08:19:06 nel Exp $
  */
 
 #include "gauche_dbd_pg.h"
@@ -150,6 +150,20 @@ ScmObj Scm_PqNfields(ScmObj result) {
   } else return SCM_FALSE;
 
   return column_count;
+}
+
+ScmObj Scm_Pqfname(ScmObj result, int i) {
+  ScmObj sname = SCM_FALSE;
+  ScmPqRes *r;
+  char *name;
+
+  if (SCM_PQ_RES_P(result)) {
+    r = SCM_PQ_RES(result);
+    name = PQfname(r->res, i);
+    sname = SCM_MAKE_STR_COPYING (name);
+  } else return SCM_FALSE;
+
+  return sname;
 }
 
 ScmObj Scm_PqGetValue(int row_id, int col_id, ScmObj result) {

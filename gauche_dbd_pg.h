@@ -5,7 +5,7 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: gauche_dbd_pg.h,v 1.1 2005/07/19 00:45:42 shiro Exp $
+ * $Id: gauche_dbd_pg.h,v 1.2 2005/07/21 08:19:06 nel Exp $
  */
 
 /* Prologue */
@@ -61,6 +61,8 @@ extern ScmObj Scm_PqNtuples(ScmObj result);
 extern ScmObj Scm_PqNfields(ScmObj result);
 
 extern ScmObj Scm_PqGetValue(int row_id, int col_id, ScmObj result);
+
+extern ScmObj Scm_Pqfname(ScmObj result, int index);
 
 extern ScmObj Scm_PqFinish(ScmObj connection);
 
