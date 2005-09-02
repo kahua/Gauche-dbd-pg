@@ -1,4 +1,9 @@
 2005-09-02  Shiro Kawai  <shiro@acm.org>
 
+	* dbd_pglib.stub (pq-trace, pq-untrace, pq-set-notice-processor):
+	  added more libpq APIs.
+
+2005-09-01  Shiro Kawai  <shiro@acm.org>
+
 	* adapted to the new DBI API.
 

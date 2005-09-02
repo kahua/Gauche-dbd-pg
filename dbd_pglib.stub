@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbd_pglib.stub,v 1.1 2005/09/02 13:12:32 shiro Exp $
+;; $Id: dbd_pglib.stub,v 1.2 2005/09/02 22:20:35 shiro Exp $
 
 "
 #include \"dbd_pg.h\"
@@ -106,3 +106,34 @@
 (define-cproc pq-clear (result::<pg-result>)
   (call <void> "PQclear"))
 
+;; For debugging 
+(define-cproc pq-trace (conn::<pg-conn> oport::<output-port>)
+  (body <void>
+        "FILE *fp;"
+        "int fd = Scm_PortFileNo(oport);"
+        "if (fd < 0) Scm_Error(\"pq-trace: output port must be a file port, but got %S\", oport);"
+        "fp = fdopen(fd, \"w\");"
+        "if (fp == NULL) Scm_SysError(\"pq-trace: couldn't open FILE stream\");"
+        "PQtrace(conn, fp);"))
+
+(define-cproc pq-untrace (conn::<pg-conn>)
+  (call <void> "PQuntrace"))
+
+"static void notice_processor(void *arg, const char *message)
+ {
+    Scm_Apply(SCM_OBJ(arg), SCM_LIST1(SCM_MAKE_STR_COPYING(message)));
+ }"
+
+(define-symbol notice-processor "sym_notice_processor")
+
+(define-cproc pq-set-notice-processor (conn proc)
+  (body <void>
+        ;; We need to protect proc from being GCed, so we store it
+        ;; in the foreign pointer attributes.  Because we need to access
+        ;; the attributes, we can't use automatic type checking/unboxing.
+        "if (!PG_CONN_P(conn)) {"
+        "  Scm_Error(\"<pg-conn> required, but got %S\", conn);"
+        "}"
+        "Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(conn),"
+        "                          sym_notice_processor, proc);"
+        "PQsetNoticeProcessor(PG_CONN_UNBOX(conn), notice_processor, proc);"))
