@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.3 2005/09/02 13:12:33 shiro Exp $
+;;; $Id: pg.scm,v 1.4 2005/09/02 22:45:50 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -24,7 +24,7 @@
           pq-result-error-message pq-ntuples pq-nfields pq-fname
           pq-fnumber pq-ftype pq-fsize pq-fmod pq-binary-tuples
           pq-getvalue pq-getisnull pq-cmd-status pq-cmd-tuples pq-oid-status
-          pq-clear
+          pq-clear pq-trace pq-untrace pq-set-notice-processor
 
           ;; dbd methods
           dbd-make-connection
