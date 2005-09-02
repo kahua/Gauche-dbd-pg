@@ -14,140 +14,74 @@
 
 (test-section "new API")
 
-;; dbi-connect のテスト:
-;; 注: (sys-getenv "USER")で取得した現在のユーザーがパスワードなしで
-;;     PostgreSQLのデフォルトデータベースに接続できる必要がある。
-(define current-user (sys-getenv "USER"))
-(define pg-connection
-  (dbi-connect "dbi:pg" :user current-user))
+(define *conn* #f)
+(define *res* #f)
 
-(test* "dbi-connect"
-       #t
-       (is-a? pg-connection <pg-connection>))
+(test* "dbi-connect" #t
+       (begin
+         (set! *conn*
+               (dbi-connect "dbi:pg"
+                            :username (sys-uid->user-name (sys-getuid))))
+         (is-a? *conn* <pg-connection>)))
 
-;;;; testテーブルをdropしておく
-(with-error-handler
-    (lambda (e) #t)
-  (lambda ()
-    (dbi-execute (dbi-prepare pg-connection "drop table test"))))
+;; drop test table if there's any.  we can ignore dbi-error in case
+;; test table hasn't exist.
+(test* "dbi-do (drop table)" #t
+       (guard (e
+               (<dbi-error> #t))
+         (dbi-do *conn* "drop table test")
+         #t))
 
-;;;; testテーブルを作成しておく
-(dbi-execute (dbi-prepare pg-connection "create table test (id integer, name varchar)"))
-;;;; testテーブルにデータをinsertしておく
-(dbi-execute (dbi-prepare pg-connection "insert into test (id, name) values (10, 'yasuyuki')"))
-(dbi-execute (dbi-prepare pg-connection "insert into test (id, name) values (20, 'nyama')"))
+;; create and populate the test table
+(test* "dbi-do (create table)" #t
+       (begin
+         (dbi-do *conn* "create table test (id integer, name varchar)")
+         #t))
 
-;; dbi-execute-query のテスト:
-;; <pg-query>型のインスタンスを引数にしたとき
-;; dbi-execute-query の戻り値が
-;; <pg-result-set>型のインスタンスだったら合格
-(define pg-result-set (dbi-execute (dbi-prepare pg-connection "select * from test")))
-(test* "dbi-execute-query"
-       #t
-       (is-a? pg-result-set <pg-result-set>))
+(test* "dbi-prepare/execute (insert)" #t
+       (let1 query
+           (dbi-prepare *conn* "insert into test (id, name) values (?, ?)")
+         (dbi-execute query 10 "yasuyuki")
+         (dbi-execute query 20 "nyama")
+         #t))
 
-;; dbi-get-valueのテスト:
-;; map の中で pg-get-value を使って <pg-result-set> からすべての行を取得し、
-;; あらかじめ insertされた (("10" "yasuyuki") ("20" "nyama")) に等しければ合格
+;; query 
+(test* "dbi-do (select)" #t
+       (begin
+         (set! *res* (dbi-do *conn* "select * from test"))
+         (is-a? *res* <pg-result-set>)))
+
 (test* "dbi-get-value with map"
        '(("10" "yasuyuki") ("20" "nyama"))
   (map (lambda (row)
          (list (dbi-get-value row 0) (dbi-get-value row 1)))
-       pg-result-set))
+       *res*))
+
+(test* "relation-column-names"
+       '("id" "name")
+       (relation-column-names *res*))
+
+(test* "relation-getter with map"
+       '(("10" "yasuyuki") ("20" "nyama"))
+       (let ((getter (relation-accessor *res*)))
+         (map (lambda (row)
+                (list (getter row "id")
+                      (getter row "name")))
+              *res*)))
 
 (test* "relation-ref with map"
        '(("10" "yasuyuki") ("20" "nyama"))
        (map (lambda (row)
-              (list (relation-ref pg-result-set row "id")
-                    (relation-ref pg-result-set row "name")))
-            pg-result-set))
+              (list (relation-ref *res* row "id")
+                    (relation-ref *res* row "name")))
+            *res*))
 
-;; dbi-close <dbi-result-set> のテスト:
-;; <pg-result-set>型のインスタンスをcloseして再度アクセスし、
-;; <dbi-exception>が発生したら合格
-(dbi-close pg-result-set)
-(test* "dbi-close <pg-result-set>" *test-error*
-       (dbi-close pg-result-set))
+;; closing
+(test* "dbi-close (result)" #f
+       (begin (dbi-close *res*) (dbi-open? *res*)))
 
-;; dbi-close <dbi-connection> のテスト:
-;; <pg-connection>型のインスタンスをcloseして再度アクセスし、
-;; <dbi-exception>が発生したら合格
-(dbi-close pg-connection)
-(test* "dbi-close <pg-connection>" *test-error*
-       (dbi-close pg-connection))
-
-;;------------------------------------------------------------
-;; 古いDBI APIのためのテスト
-(test-section "compatible API test")
-
-;; dbi-make-driver のテスト:
-;; "pg" ドライバーをロードして
-;; クラス <pg-driver> のインスタンスだったら合格
-(define pg-driver (dbi-make-driver "pg"))
-(test* "dbi-make-driver pg"
-       #t
-       (is-a? pg-driver <pg-driver>))
-
-;; dbi-make-connection のテスト:
-;; <pg-driver>型のインスタンスを引数にしたとき
-;; dbi-make-connection の戻り値が 
-;; <pg-connection>型のインスタンスだったら合格
-;; 注: (sys-getenv "USER")で取得した現在のユーザーがパスワードなしで
-;;     PostgreSQLのデフォルトデータベースに接続できる必要がある。
-(define current-user (sys-getenv "USER"))
-(define pg-connection
-  (dbi-make-connection pg-driver current-user "" ""))
-(test* "dbi-make-connection <pg-driver>"
-       #t
-       (is-a? pg-connection <pg-connection>))
-
-;; dbi-make-query のテスト:
-;; <pg-connection>型のインスタンスを引数にしたとき
-;; dbi-make-queryの戻り値が
-;; <pg-query>型のインスタンスだったら合格
-(define pg-query (dbi-make-query pg-connection))
-(test* "dbi-make-query <pg-connection>"
-       #t
-       (is-a? pg-query <pg-query>))
-
-;; dbi-execute-query のテスト:
-;; <pg-query>型のインスタンスを引数にしたとき
-;; dbi-execute-query の戻り値が
-;; <pg-result-set>型のインスタンスだったら合格
-(define pg-result-set (dbi-execute-query pg-query "select * from test"))
-(test* "dbi-execute-query <pg-query>"
-       #t
-       (is-a? pg-result-set <pg-result-set>))
-
-;; dbi-get-valueのテスト:
-;; map の中で pg-get-value を使って <pg-result-set> からすべての行を取得し、
-;; あらかじめ insertされた (("10" "yasuyuki") ("20" "nyama")) に等しければ合格
-(test* "dbi-get-value with map"
-       '(("10" "yasuyuki") ("20" "nyama"))
-  (map (lambda (row)
-	      (list (dbi-get-value row 0) (dbi-get-value row 1)))
-	    pg-result-set))
-
-;; dbi-close <dbi-result-set> のテスト:
-;; <pg-result-set>型のインスタンスをcloseして再度アクセスし、
-;; <dbi-exception>が発生したら合格
-(dbi-close pg-result-set)
-(test* "dbi-close <pg-result-set>" *test-error*
-       (dbi-close pg-result-set))
-
-;; dbi-close <dbi-query> のテスト:
-;; <pg-query>型のインスタンスをcloseして再度アクセスし、
-;; <dbi-exception>が発生したら合格
-(dbi-close pg-query)
-(test* "dbi-close <pg-query>" *test-error*
-       (dbi-close pg-query))
-
-;; dbi-close <dbi-connection> のテスト:
-;; <pg-connection>型のインスタンスをcloseして再度アクセスし、
-;; <dbi-exception>が発生したら合格
-(dbi-close pg-connection)
-(test* "dbi-close <pg-connection>" *test-error*
-       (dbi-close pg-connection))
+(test* "dbi-close (connection)" #f
+       (begin (dbi-close *conn*) (dbi-open? *conn*)))
 
 ;; epilogue
 (test-end)

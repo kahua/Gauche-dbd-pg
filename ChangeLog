@@ -1,0 +1,4 @@
+2005-09-02  Shiro Kawai  <shiro@acm.org>
+
+	* adapted to the new DBI API.
+

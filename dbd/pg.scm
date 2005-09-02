@@ -4,42 +4,39 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.2 2005/07/21 08:19:06 nel Exp $
+;;; $Id: pg.scm,v 1.3 2005/09/02 13:12:33 shiro Exp $
 
 (define-module dbd.pg
-  (use gauche.collection)
   (use gauche.sequence)
   (use dbi)
   (use srfi-1)
+  (use util.list)
   (export <pg-driver>
 	  <pg-connection>
 	  <pg-result-set>
-	  <pq-handle>	; pq.so
-	  <pq-res>	; pq.so
-	  pq-connectdb	; pq.so
-	  pq-exec	; pq.so
-	  pq-result-status ; pq.so
-	  pq-result-error-message ; pq.so
-	  pq-ntuples	; pq.so
-	  pq-nfields	; pq.so
-	  pq-get-value	; pq.so
-          pq-fname      ; pq.so
-	  pq-finish	; pq.so
+          <pg-row>
+
+          ;; low-level stuff
+          <pg-conn> <pg-result>
+          pq-connectdb pq-finish pq-reset pq-db pq-user pq-pass pq-host
+          pq-port pq-tty pq-options pq-status pq-error-message
+          pq-backend-pid pq-exec pq-result-status pq-res-status
+          pq-result-error-message pq-ntuples pq-nfields pq-fname
+          pq-fnumber pq-ftype pq-fsize pq-fmod pq-binary-tuples
+          pq-getvalue pq-getisnull pq-cmd-status pq-cmd-tuples pq-oid-status
+          pq-clear
+
+          ;; dbd methods
           dbd-make-connection
           dbd-execute
 	  dbi-get-value
 	  call-with-iterator
 	  dbi-close
-          ;; compatibility
-	  <pg-query>
-  	  dbi-make-connection
-	  dbi-make-query
-	  dbi-execute-query
           ))
 (select-module dbd.pg)
 
 ;; Loads extension
-(dynamic-load "gauche_dbd_pg")
+(dynamic-load "dbd_pg")
 
 (define-class <pg-driver> (<dbi-driver>) ())
 
@@ -47,7 +44,7 @@
   ((%connection :init-keyword :connection :init-value #f)))
 
 (define-class <pg-result-set> (<dbi-result-set>)
-  ((%result-set :init-keyword :result-set)
+  ((%pg-result :init-keyword :pg-result)
    (%status :init-keyword :status)
    (%error :init-keyword :error)
    (%num-rows :init-keyword :num-rows)
@@ -55,153 +52,107 @@
    (num-cols :getter dbi-column-count :init-keyword :num-cols)
    ))
 
-(define-method dbd-make-connection ((d <pg-driver>) options option-alist . args)
-  (define (keywords->option-string)
-    (apply
-     string-append
-     (let loop ((rest args))
-       (cond ((null? rest) '())
-             ((null? (cdr rest))
-              (error "illigal keyword value pair"))
-             (else
-              (let ((k (car rest))
-                    (v (cadr rest)))
-                (cons #`",|k|=,|v| " (loop (cddr rest)))))))))
-    
+(define-class <pg-row> (<sequence>)
+  ((%result-set :init-keyword :result-set)
+   (%row-id     :init-keyword :row-id)))
+;; 
+(define-method dbd-make-connection ((d <pg-driver>)
+                                    options option-alist . args)
+  (define (build-option-string)
+    (string-join (map (lambda (p)
+                        (format "~a='~a'" (car p)
+                                (regexp-replace-all #/'/ (cdr p) "\\'")))
+                      (all-options))))
+
+  (define (all-options)
+    (append
+     (cond-list
+      ((get-keyword :username args #f) => (cut cons 'user <>))
+      ((get-keyword :password args #f) => (cut cons 'password <>)))
+     option-alist))
+                 
   (let* ((conn (make <pg-connection>
                  :driver-name d
                  :open        #t
-                 :connection  (pq-connectdb
-                               (keywords->option-string)
-                               (make <pq-handle>))))
-         (status (pq-status (slot-ref conn '%connection))))
-    (if (eq? status CONNECTION_BAD)
-        (raise (make <dbi-exception>
-                 :error-code status
-                 :message "Connect Error: Bad Connection"))
-        conn)))
+                 :connection  (pq-connectdb (build-option-string))))
+         (status (pq-status (ref conn '%connection))))
+    (when (eq? status CONNECTION_BAD)
+      (error <dbi-error>
+             "PostgreSQL connect Error:"
+             (pq-error-message (ref conn '%connection))))
+    conn))
 
 (define-method dbd-execute ((c <pg-connection>) (q <dbi-query>) . params)
   (unless (ref c 'open)
-    (raise
-     (make <dbi-exception> :error-code -2
-           :message "connection is closed.")))
-  
-  (and-let* ((prepared (ref q '%prepared))
-             (sql      (apply prepared params))
-             (result   (pq-exec sql (ref c '%connection) (make <pq-res>)))
-             (status   (pq-result-status result))
-             (error    (pq-result-error-message result)))
-    
-    (case status
-      ((PG_NONFATAL_ERROR)
-       (raise
-        (make <dbi-exception> :error-code status :error-message error)))
-      ((PG_FATAL_ERROR)
-       (raise
-        (make <dbi-exception> :error-code status :error-message error))))
-    
+    (error <dbi-error> "closed connection:" c))
+  (let* ((result (pq-exec (ref c '%connection)
+                          (apply (ref q '%prepared) params)))
+         (status (pq-result-status result)))
+    (when (memv status `(,PGRES_NONFATAL_ERROR ,PGRES_FATAL_ERROR))
+      (error <dbi-error> message))
     (make <pg-result-set>
-      :open #t
-      :result-set result
+      :pg-result result
       :status status
       :error error
       :num-rows (pq-ntuples result)
       :num-cols (pq-nfields result))))
 
+;;
+;; Relation API
+;;
 (define-method relation-column-names ((r <pg-result-set>))
   (or (ref r '%columns)
-      (let* ((result-set (ref r '%result-set))
-             (columns    (map (cut pq-fname result-set <>)
-                              (iota (ref r 'num-cols)))))
-        (set! (ref r '%columns) columns)
+      (let1 columns
+          (map (cut pq-fname (slot-ref r '%pg-result) <>)
+               (iota (slot-ref r 'num-cols)))
+        (set! (slot-ref r '%columns) columns)
         columns)))
 
-(define-method relation-column-getter ((r <pg-result-set>) column . default)
-  (let ((i (find-index (cut equal? column <>) (relation-column-names r))))
-    (lambda (row)
-      (and i (row i)))))
-
-;; (define-method relation-column-setter ((r <pg-result-set>) column)
-;;   (let ((i (find-index (cut equal? column <>) (relation-column-names r))))
-;;     (lambda (row val)
-;;       (and i (set! (ref row i) val)))))
+(define-method relation-column-getter ((r <pg-result-set>) column)
+  (or (and-let* ((i (find-index (cut equal? column <>)
+                                (relation-column-names r))))
+        (lambda (row)
+          (pq-getvalue (slot-ref (slot-ref row '%result-set) '%pg-result)
+                       (slot-ref row '%row-id) i)))
+      (error "pg-result-set: invalid column name:" column)))
 
 (define-method call-with-iterator ((r <pg-result-set>) proc . option)
-   (if (not (slot-ref r 'open))
-       (raise (make <dbi-exception> :error-code -4 :message "<pg-result> already closed.")))
-   (let ((row-id -1))
+  (unless (slot-ref r 'open)
+    (error <dbi-error> "closed result set:" r))
+  (let ((row-id -1))
     (define (end?)
       (>= (+ row-id 1) (slot-ref r '%num-rows)))
     (define (next)
       (inc! row-id)
-      (lambda (n) (pq-get-value row-id n (slot-ref r '%result-set))))
+      (make <pg-row> :result-set r :row-id row-id))
     (proc end? next)))
 
+(define-method call-with-iterator ((row <pg-row>) proc . option)
+  (let* ((result   (slot-ref row '%result-set))
+         (num-cols (slot-ref result 'num-cols))
+         (col-id -1))
+    (proc (lambda () (>= (+ col-id 1) num-cols))
+          (lambda ()
+            (inc! col-id)
+            (pg-getvalue (slot-ref result '%pg-result)
+                         (slot-ref row '%row-id) col-id)))))
+
+(define-method referencer ((row <pg-row>))
+  dbi-get-value)
+
+(define-method dbi-get-value ((row <pg-row>) index)
+  (pq-getvalue (slot-ref (slot-ref row '%result-set) '%pg-result)
+               (slot-ref row '%row-id) index))
+
 (define-method dbi-close ((result-set <pg-result-set>))
-  (if (not (slot-ref result-set 'open))
-      (raise
-       (make <dbi-exception> :error-code -5 :message "already closed.")))
+  (when (ref result-set 'open)
+    (pq-clear (ref result-set '%pg-result)))
   (slot-set! result-set 'open #f))
 
 (define-method dbi-close ((connection <pg-connection>))
-  (if (not (slot-ref connection 'open))
-      (raise
-       (make <dbi-exception> :error-code -7 :message "already closed.")))
-  (slot-set! connection 'open #f)
-  (pq-finish (slot-ref connection '%connection)))
-
-(define-method dbi-get-value ((proc <procedure>) (n <integer>)) (proc n))
-
-;;;------------------------------------------------------------
-;;; Backward compatibility stuff
-;;;
-
-(define-class <pg-query> (<dbi-query>)
-  ((%connection   :init-keyword :connection)
-   (%query-string :init-keyword :query-string)))
-
-(define-method dbi-make-connection ((d <pg-driver>) (user <string>)
-				    (password <string>) (option <string>))
-  (let ((conn
-	(make <pg-connection> :driver-name d :open #t
-		   :connection (pq-connectdb
-		     (string-append
-		      (if (> (string-length user) 0) "user="  "")
-		      user
-		      (if (> (string-length password) 0) " password=" "")
-		      password " " option)
-		     (make <pq-handle>)))))
-    (let ((status (pq-status (slot-ref conn '%connection))))
-      (if (eq? status CONNECTION_BAD)
-	  (raise (make <dbi-exception>
-		   :error-code status
-		   :message "Connect Error: Bad Connection"))
-	  conn))))
-
-(define-method dbi-make-query ((c <pg-connection>))
-  (if (not (slot-ref c 'open))
-      (raise
-       (make <dbi-exception> :error-code -1
-	     :message "connection has already closed.")))
-  (make <pg-query>
-    :open #t
-    :connection c))
-
-(define-method dbi-execute-query ((q <pg-query>) (query-string <string>))
-  (if (not (slot-ref q 'open))
-      (raise
-       (make <dbi-exception> :error-code -2
-	     :message "query has already closed.")))
-
-  (dbd-execute (ref q '%connection)
-               (dbi-prepare (ref q '%connection) query-string)))
-
-(define-method dbi-close ((query <pg-query>))
-  (if (not (slot-ref query 'open))
-      (raise
-       (make <dbi-exception> :error-code -6 :message "already closed.")))
-  (slot-set! query 'open #f))
+  (when (ref connection 'open)
+    (pq-finish (slot-ref connection '%connection)))
+  (slot-set! connection 'open #f))
 
 ;; Epilogue
 (provide "dbd/pg")
