@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.4 2005/09/02 22:45:50 shiro Exp $
+;;; $Id: pg.scm,v 1.5 2005/09/05 08:58:21 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -108,13 +108,16 @@
         (set! (slot-ref r '%columns) columns)
         columns)))
 
-(define-method relation-column-getter ((r <pg-result-set>) column)
-  (or (and-let* ((i (find-index (cut equal? column <>)
-                                (relation-column-names r))))
-        (lambda (row)
-          (pq-getvalue (slot-ref (slot-ref row '%result-set) '%pg-result)
-                       (slot-ref row '%row-id) i)))
-      (error "pg-result-set: invalid column name:" column)))
+(define-method relation-accessor ((r <pg-result-set>))
+  (let1 column-names (relation-column-names r)
+    (lambda (row column . maybe-default)
+      (cond
+       ((find-index (cut equal? column <>) column-names)
+        => (lambda (i)
+             (pq-getvalue (slot-ref (slot-ref row '%result-set) '%pg-result)
+                          (slot-ref row '%row-id) i)))
+       ((pair? maybe-default) (car maybe-default))
+       (else (error "pg-result-set: invalid column name:" column))))))
 
 (define-method call-with-iterator ((r <pg-result-set>) proc . option)
   (unless (slot-ref r 'open)
