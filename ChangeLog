@@ -1,3 +1,7 @@
+2005-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* dbd/pg.scm : adapted to dbi api change
+
 2005-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* dbd_pglib.stub (pq-trace, pq-untrace, pq-set-notice-processor):

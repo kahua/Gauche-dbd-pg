@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.5 2005/09/05 08:58:21 shiro Exp $
+;;; $Id: pg.scm,v 1.6 2005/09/07 11:51:30 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -25,13 +25,6 @@
           pq-fnumber pq-ftype pq-fsize pq-fmod pq-binary-tuples
           pq-getvalue pq-getisnull pq-cmd-status pq-cmd-tuples pq-oid-status
           pq-clear pq-trace pq-untrace pq-set-notice-processor
-
-          ;; dbd methods
-          dbd-make-connection
-          dbd-execute
-	  dbi-get-value
-	  call-with-iterator
-	  dbi-close
           ))
 (select-module dbd.pg)
 
@@ -56,8 +49,10 @@
   ((%result-set :init-keyword :result-set)
    (%row-id     :init-keyword :row-id)))
 ;; 
-(define-method dbd-make-connection ((d <pg-driver>)
-                                    options option-alist . args)
+(define-method dbi-make-connection ((d <pg-driver>)
+                                    (options <string>)
+                                    (option-alist <list>)
+                                    . args)
   (define (build-option-string)
     (string-join (map (lambda (p)
                         (format "~a='~a'" (car p)
@@ -82,20 +77,25 @@
              (pq-error-message (ref conn '%connection))))
     conn))
 
-(define-method dbd-execute ((c <pg-connection>) (q <dbi-query>) . params)
-  (unless (ref c 'open)
-    (error <dbi-error> "closed connection:" c))
-  (let* ((result (pq-exec (ref c '%connection)
-                          (apply (ref q '%prepared) params)))
-         (status (pq-result-status result)))
-    (when (memv status `(,PGRES_NONFATAL_ERROR ,PGRES_FATAL_ERROR))
-      (error <dbi-error> message))
-    (make <pg-result-set>
-      :pg-result result
-      :status status
-      :error error
-      :num-rows (pq-ntuples result)
-      :num-cols (pq-nfields result))))
+;; Postgres has prepared statement feature.  Eventually we're going
+;; to use it, but for now, we use Gauche's default preparation routine.
+(define-method dbi-prepare ((c <pg-connection>) (sql <string>) . options)
+  (let-keywords* options ((pass-through #f))
+    (let ((h  (slot-ref c '%connection))
+          (prepared (if pass-through
+                      (lambda () sql)
+                      (dbi-prepare-sql c sql))))
+      (lambda params
+        (let* ((result (pq-exec h (apply prepared params)))
+               (status (pq-result-status result)))
+          (when (memv status `(,PGRES_NONFATAL_ERROR ,PGRES_FATAL_ERROR))
+            (error <dbi-error> message))
+          (make <pg-result-set>
+            :pg-result result
+            :status status
+            :error error
+            :num-rows (pq-ntuples result)
+            :num-cols (pq-nfields result)))))))
 
 ;;
 ;; Relation API
