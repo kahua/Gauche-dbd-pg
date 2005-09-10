@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.6 2005/09/07 11:51:30 shiro Exp $
+;;; $Id: pg.scm,v 1.7 2005/09/10 12:16:47 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -25,6 +25,7 @@
           pq-fnumber pq-ftype pq-fsize pq-fmod pq-binary-tuples
           pq-getvalue pq-getisnull pq-cmd-status pq-cmd-tuples pq-oid-status
           pq-clear pq-trace pq-untrace pq-set-notice-processor
+          pq-finished? pq-cleared?
           ))
 (select-module dbd.pg)
 
@@ -34,9 +35,9 @@
 (define-class <pg-driver> (<dbi-driver>) ())
 
 (define-class <pg-connection> (<dbi-connection>)
-  ((%connection :init-keyword :connection :init-value #f)))
+  ((%handle :init-keyword :handle :init-value #f)))
 
-(define-class <pg-result-set> (<dbi-result-set>)
+(define-class <pg-result-set> (<relation>)
   ((%pg-result :init-keyword :pg-result)
    (%status :init-keyword :status)
    (%error :init-keyword :error)
@@ -48,6 +49,7 @@
 (define-class <pg-row> (<sequence>)
   ((%result-set :init-keyword :result-set)
    (%row-id     :init-keyword :row-id)))
+
 ;; 
 (define-method dbi-make-connection ((d <pg-driver>)
                                     (options <string>)
@@ -69,27 +71,34 @@
   (let* ((conn (make <pg-connection>
                  :driver-name d
                  :open        #t
-                 :connection  (pq-connectdb (build-option-string))))
-         (status (pq-status (ref conn '%connection))))
+                 :handle  (pq-connectdb (build-option-string))))
+         (status (pq-status (ref conn '%handle))))
     (when (eq? status CONNECTION_BAD)
       (error <dbi-error>
              "PostgreSQL connect Error:"
-             (pq-error-message (ref conn '%connection))))
+             (pq-error-message (ref conn '%handle))))
     conn))
+
+(define (pg-connection-check c)
+  (when (pq-finished? (slot-ref c '%handle))
+    (error <dbi-error> "closed connection:" c)))
 
 ;; Postgres has prepared statement feature.  Eventually we're going
 ;; to use it, but for now, we use Gauche's default preparation routine.
 (define-method dbi-prepare ((c <pg-connection>) (sql <string>) . options)
+  (pg-connection-check c)  
   (let-keywords* options ((pass-through #f))
-    (let ((h  (slot-ref c '%connection))
+    (let ((h  (slot-ref c '%handle))
           (prepared (if pass-through
                       (lambda () sql)
                       (dbi-prepare-sql c sql))))
       (lambda params
+        (when (pq-finished? h)
+          (error <dbi-error> "closed connection:" c))
         (let* ((result (pq-exec h (apply prepared params)))
                (status (pq-result-status result)))
           (when (memv status `(,PGRES_NONFATAL_ERROR ,PGRES_FATAL_ERROR))
-            (error <dbi-error> message))
+            (error <dbi-error> (pq-result-error-message result)))
           (make <pg-result-set>
             :pg-result result
             :status status
@@ -97,10 +106,15 @@
             :num-rows (pq-ntuples result)
             :num-cols (pq-nfields result)))))))
 
+(define (pg-result-set-check r)
+  (when (pq-cleared? (slot-ref r '%pg-result))
+    (error <dbi-error> "closed result set:" r)))
+
 ;;
 ;; Relation API
 ;;
 (define-method relation-column-names ((r <pg-result-set>))
+  (pg-result-set-check r)
   (or (ref r '%columns)
       (let1 columns
           (map (cut pq-fname (slot-ref r '%pg-result) <>)
@@ -109,6 +123,7 @@
         columns)))
 
 (define-method relation-accessor ((r <pg-result-set>))
+  (pg-result-set-check r)
   (let1 column-names (relation-column-names r)
     (lambda (row column . maybe-default)
       (cond
@@ -120,8 +135,7 @@
        (else (error "pg-result-set: invalid column name:" column))))))
 
 (define-method call-with-iterator ((r <pg-result-set>) proc . option)
-  (unless (slot-ref r 'open)
-    (error <dbi-error> "closed result set:" r))
+  (pg-result-set-check r)
   (let ((row-id -1))
     (define (end?)
       (>= (+ row-id 1) (slot-ref r '%num-rows)))
@@ -144,18 +158,23 @@
   dbi-get-value)
 
 (define-method dbi-get-value ((row <pg-row>) index)
+  (pg-result-set-check (slot-ref row '%result-set))
   (pq-getvalue (slot-ref (slot-ref row '%result-set) '%pg-result)
                (slot-ref row '%row-id) index))
 
+(define-method dbi-open? ((result-set <pg-result-set>))
+  (not (pq-cleared? (ref result-set '%pg-result))))
+
 (define-method dbi-close ((result-set <pg-result-set>))
-  (when (ref result-set 'open)
-    (pq-clear (ref result-set '%pg-result)))
-  (slot-set! result-set 'open #f))
+  (unless (pq-cleared? (ref result-set '%pg-result))
+    (pq-clear (ref result-set '%pg-result))))
+
+(define-method dbi-open? ((connection <pg-connection>))
+  (not (pq-finished? (slot-ref connection '%handle))))
 
 (define-method dbi-close ((connection <pg-connection>))
-  (when (ref connection 'open)
-    (pq-finish (slot-ref connection '%connection)))
-  (slot-set! connection 'open #f))
+  (unless (pq-finished? (slot-ref connection '%handle))
+    (pq-finish (slot-ref connection '%handle))))
 
 ;; Epilogue
 (provide "dbd/pg")

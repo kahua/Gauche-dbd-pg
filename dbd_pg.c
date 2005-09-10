@@ -5,7 +5,7 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: dbd_pg.c,v 1.1 2005/09/02 13:12:32 shiro Exp $
+ * $Id: dbd_pg.c,v 1.2 2005/09/10 12:16:47 shiro Exp $
  */
 
 #include "dbd_pg.h"
@@ -20,14 +20,35 @@ ScmClass *PGResultClass;
 
 static void pgconn_cleanup(ScmObj obj)
 {
-    PGconn *c = PG_CONN_UNBOX(obj);
-    PQfinish(c);
+    if (!PGClosedP(obj)) {
+        PGconn *c = PG_CONN_UNBOX(obj);
+        PQfinish(c);
+    }
 }
 
 static void pgresult_cleanup(ScmObj obj)
 {
-    PGresult *r = PG_RESULT_UNBOX(obj);
-    PQclear(r);
+    if (!PGClosedP(obj)) {
+        PGresult *r = PG_RESULT_UNBOX(obj);
+        PQclear(r);
+    }
+}
+
+/*
+ * Open/close status management
+ */
+static ScmObj sym_closed;       /* symbol 'closed? */
+
+int PGClosedP(ScmObj obj)
+{
+    return !SCM_FALSEP(Scm_ForeignPointerAttrGet(SCM_FOREIGN_POINTER(obj),
+                                                 sym_closed, SCM_FALSE));
+}
+
+void PGMarkClosed(ScmObj obj)
+{
+    Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(obj),
+                              sym_closed, SCM_TRUE);
 }
 
 /*
@@ -52,6 +73,8 @@ ScmObj Scm_Init_dbd_pg(void)
     PGResultClass =
         Scm_MakeForeignPointerClass(mod, "<pg-result>",
                                     NULL, pgresult_cleanup, 0);
+
+    sym_closed = SCM_INTERN("closed?");
     
     /* Register stub-generated procedures */
     Scm_Init_dbd_pglib(mod);

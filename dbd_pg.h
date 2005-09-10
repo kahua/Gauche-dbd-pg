@@ -5,7 +5,7 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: dbd_pg.h,v 1.1 2005/09/02 13:12:32 shiro Exp $
+ * $Id: dbd_pg.h,v 1.2 2005/09/10 12:16:47 shiro Exp $
  */
 
 /* Prologue */
@@ -23,6 +23,10 @@ SCM_DECL_BEGIN
  * Internal Classes
  */
 
+/* We use foreign pointer to hold PG connection and result set
+   handles.  Once a handle is closed, we mark the foreign pointer
+   so by setting a foreign-pointer-attribute 'closed to #t. */
+
 extern ScmClass *PGConnClass;
 #define PG_CONN_P(obj)        SCM_XTYPEP(obj, PGConnClass)
 #define PG_CONN_UNBOX(obj)    SCM_FOREIGN_POINTER_REF(PGconn*, obj)
@@ -32,6 +36,9 @@ extern ScmClass *PGResultClass;
 #define PG_RESULT_P(obj)      SCM_XTYPEP(obj, PGResultClass)
 #define PG_RESULT_UNBOX(obj)  SCM_FOREIGN_POINTER_REF(PGresult*, obj)
 #define PG_RESULT_BOX(res)    Scm_MakeForeignPointer(PGResultClass, res)
+
+extern int  PGClosedP(ScmObj obj);
+extern void PGMarkClosed(ScmObj obj);
 
 /* Epilogue */
 SCM_DECL_END

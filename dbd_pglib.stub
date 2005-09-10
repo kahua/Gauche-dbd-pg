@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbd_pglib.stub,v 1.2 2005/09/02 22:20:35 shiro Exp $
+;; $Id: dbd_pglib.stub,v 1.3 2005/09/10 12:16:47 shiro Exp $
 
 "
 #include \"dbd_pg.h\"
@@ -40,8 +40,16 @@
 ;; Connection
 (define-cproc pq-connectdb (conninfo::<const-cstring>)
   (call <pg-conn> "PQconnectdb"))
-(define-cproc pq-finish (conn::<pg-conn>) (call <void> "PQfinish"))
+(define-cproc pq-finish (conn::<pg-conn>)
+  (body <void>
+        "if (!PGClosedP(conn_scm)) {"
+        "  PQfinish(conn);"
+        "  PGMarkClosed(conn_scm);"
+        "}"))
 (define-cproc pq-reset (conn::<pg-conn>)  (call <void> "PQreset"))
+
+(define-cproc pq-finished? (conn::<pg-conn>)
+  (expr <boolean> "PGClosedP(conn_scm)"))
 
 (define-cproc pq-db (conn::<pg-conn>)   (call <const-cstring> "PQdb"))
 (define-cproc pq-user (conn::<pg-conn>) (call <const-cstring> "PQuser"))
@@ -104,7 +112,14 @@
   (call <const-cstring> "PQoidStatus"))
 
 (define-cproc pq-clear (result::<pg-result>)
-  (call <void> "PQclear"))
+  (body <void>
+        "if (!PGClosedP(result_scm)) {"
+        "  PQclear(result);"
+        "  PGMarkClosed(result_scm);"
+        "}"))
+
+(define-cproc pq-cleared? (result::<pg-result>)
+  (expr <boolean> "PGClosedP(result_scm)"))
 
 ;; For debugging 
 (define-cproc pq-trace (conn::<pg-conn> oport::<output-port>)
