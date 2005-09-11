@@ -5,7 +5,7 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: dbd_pg.c,v 1.2 2005/09/10 12:16:47 shiro Exp $
+ * $Id: dbd_pg.c,v 1.3 2005/09/11 12:43:37 shiro Exp $
  */
 
 #include "dbd_pg.h"
@@ -41,12 +41,14 @@ static ScmObj sym_closed;       /* symbol 'closed? */
 
 int PGClosedP(ScmObj obj)
 {
+    SCM_ASSERT(SCM_FOREIGN_POINTER_P(obj));
     return !SCM_FALSEP(Scm_ForeignPointerAttrGet(SCM_FOREIGN_POINTER(obj),
                                                  sym_closed, SCM_FALSE));
 }
 
 void PGMarkClosed(ScmObj obj)
 {
+    SCM_ASSERT(SCM_FOREIGN_POINTER_P(obj));
     Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(obj),
                               sym_closed, SCM_TRUE);
 }
