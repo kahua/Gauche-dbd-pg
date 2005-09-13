@@ -41,8 +41,8 @@
 (test* "dbi-prepare/execute (insert)" #t
        (let1 query
            (dbi-prepare *conn* "insert into test (id, name) values (?, ?)")
-         (query 10 "yasuyuki")
-         (query 20 "nyama")
+         (dbi-execute query 10 "yasuyuki")
+         (dbi-execute query 20 "nyama")
          #t))
 
 ;; query 
