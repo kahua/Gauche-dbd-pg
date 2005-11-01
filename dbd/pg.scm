@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.8 2005/09/13 02:46:14 shiro Exp $
+;;; $Id: pg.scm,v 1.9 2005/11/01 09:57:47 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -147,7 +147,7 @@
     (proc (lambda () (>= (+ col-id 1) num-cols))
           (lambda ()
             (inc! col-id)
-            (pg-getvalue (slot-ref result '%pg-result)
+            (pq-getvalue (slot-ref result '%pg-result)
                          (slot-ref row '%row-id) col-id)))))
 
 (define-method referencer ((row <pg-row>))
