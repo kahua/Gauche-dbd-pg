@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.9 2005/11/01 09:57:47 shiro Exp $
+;;; $Id: pg.scm,v 1.10 2005/11/03 12:47:06 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -37,7 +37,7 @@
 (define-class <pg-connection> (<dbi-connection>)
   ((%handle :init-keyword :handle :init-value #f)))
 
-(define-class <pg-result-set> (<relation>)
+(define-class <pg-result-set> (<relation> <sequence>)
   ((%pg-result :init-keyword :pg-result)
    (%status :init-keyword :status)
    (%error :init-keyword :error)
@@ -129,6 +129,15 @@
                           (slot-ref row '%row-id) i)))
        ((pair? maybe-default) (car maybe-default))
        (else (error "pg-result-set: invalid column name:" column))))))
+
+(define-method relation-rows ((r <pg-result-set>))
+  (coerce-to <list> r)) ;; use call-with-iterator
+
+(define-method referencer ((r <pg-result-set>))
+  (lambda (row ind . fallback)
+    (if (or (< ind 0) (=< (slot-ref r '%num-rows) ind))
+      (get-optional fallback (error "index out of range:" ind))
+      (make <pg-row> :result-set r :row-id ind))))
 
 (define-method call-with-iterator ((r <pg-result-set>) proc . option)
   (pg-result-set-check r)
