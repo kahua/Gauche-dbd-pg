@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.10 2005/11/03 12:47:06 shiro Exp $
+;;; $Id: pg.scm,v 1.11 2005/11/03 18:25:58 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -135,7 +135,7 @@
 
 (define-method referencer ((r <pg-result-set>))
   (lambda (row ind . fallback)
-    (if (or (< ind 0) (=< (slot-ref r '%num-rows) ind))
+    (if (or (< ind 0) (<= (slot-ref r '%num-rows) ind))
       (get-optional fallback (error "index out of range:" ind))
       (make <pg-row> :result-set r :row-id ind))))
 
