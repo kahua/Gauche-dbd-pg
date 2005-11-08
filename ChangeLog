@@ -1,3 +1,8 @@
+2005-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, Makefile.in: add -lssl flag if Postgres is configured
+	  with openssl.  (Patch from Kogure, Ryo).
+
 2005-11-04  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2
