@@ -1,5 +1,7 @@
 2005-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.2.1
+
 	* dbd_pglib.stub (pq-escape-string): added stuf for PQescapeString.
 	* dbd/pg.scm (dbi-escape-sql): defined using pq-escape-string.
 	* test.scm : added test data that checks escaping.
