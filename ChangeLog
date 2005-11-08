@@ -1,5 +1,9 @@
 2005-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* dbd_pglib.stub (pq-escape-string): added stuf for PQescapeString.
+	* dbd/pg.scm (dbi-escape-sql): defined using pq-escape-string.
+	* test.scm : added test data that checks escaping.
+
 	* configure.in, Makefile.in: add -lssl flag if Postgres is configured
 	  with openssl.  (Patch from Kogure, Ryo).
 

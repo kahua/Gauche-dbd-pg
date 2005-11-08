@@ -43,6 +43,7 @@
            (dbi-prepare *conn* "insert into test (id, name) values (?, ?)")
          (dbi-execute query 10 "yasuyuki")
          (dbi-execute query 20 "nyama")
+         (dbi-execute query 30 "who's this?")
          #t))
 
 ;; query 
@@ -52,7 +53,7 @@
          (is-a? *res* <pg-result-set>)))
 
 (test* "dbi-get-value with map"
-       '(("10" "yasuyuki") ("20" "nyama"))
+       '(("10" "yasuyuki") ("20" "nyama") ("30" "who's this?"))
   (map (lambda (row)
          (list (dbi-get-value row 0) (dbi-get-value row 1)))
        *res*))
@@ -62,7 +63,7 @@
        (relation-column-names *res*))
 
 (test* "relation-getter with map"
-       '(("10" "yasuyuki") ("20" "nyama"))
+       '(("10" "yasuyuki") ("20" "nyama") ("30" "who's this?"))
        (let ((getter (relation-accessor *res*)))
          (map (lambda (row)
                 (list (getter row "id")
@@ -70,7 +71,7 @@
               *res*)))
 
 (test* "relation-ref with map"
-       '(("10" "yasuyuki") ("20" "nyama"))
+       '(("10" "yasuyuki") ("20" "nyama") ("30" "who's this?"))
        (map (lambda (row)
               (list (relation-ref *res* row "id")
                     (relation-ref *res* row "name")))

@@ -4,7 +4,7 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.11 2005/11/03 18:25:58 shiro Exp $
+;;; $Id: pg.scm,v 1.12 2005/11/08 08:46:27 shiro Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
@@ -25,7 +25,7 @@
           pq-fnumber pq-ftype pq-fsize pq-fmod pq-binary-tuples
           pq-getvalue pq-getisnull pq-cmd-status pq-cmd-tuples pq-oid-status
           pq-clear pq-trace pq-untrace pq-set-notice-processor
-          pq-finished? pq-cleared?
+          pq-finished? pq-cleared? pq-escape-string
           ))
 (select-module dbd.pg)
 
@@ -105,6 +105,9 @@
 (define (pg-result-set-check r)
   (when (pq-cleared? (slot-ref r '%pg-result))
     (error <dbi-error> "closed result set:" r)))
+
+(define-method dbi-escape-sql ((c <pg-connection>) str)
+  (pq-escape-string str))
 
 ;;
 ;; Relation API

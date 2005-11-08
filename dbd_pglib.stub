@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbd_pglib.stub,v 1.3 2005/09/10 12:16:47 shiro Exp $
+;; $Id: dbd_pglib.stub,v 1.4 2005/11/08 08:46:27 shiro Exp $
 
 "
 #include \"dbd_pg.h\"
@@ -120,6 +120,19 @@
 
 (define-cproc pq-cleared? (result::<pg-result>)
   (expr <boolean> "PGClosedP(result_scm)"))
+
+;; Escaping
+;; NB: Postgres documentation says PQescapeString takes the "length of the
+;; string" as the third arg.  As far as I see, they seem to mean "number
+;; of bytes of the string", which is of course different from the length
+;; of the string if we have MB string.  I wrote this assuming they meant the
+;; number of bytes.  --[SK]
+(define-cproc pq-escape-string (str::<string>)
+  (body "u_int size, rsize;"
+        "const char *from = Scm_GetStringContent(str, &size, NULL, NULL);"
+        "char *to = SCM_NEW_ATOMIC2(char*, size*2);"
+        "rsize = PQescapeString(to, from, size);"
+        "SCM_RESULT = Scm_MakeString(to, rsize, -1, 0);"))
 
 ;; For debugging 
 (define-cproc pq-trace (conn::<pg-conn> oport::<output-port>)
