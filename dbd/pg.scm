@@ -4,13 +4,14 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.12 2005/11/08 08:46:27 shiro Exp $
+;;; $Id: pg.scm,v 1.13 2006/06/13 00:15:07 bizenn Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
   (use dbi)
   (use srfi-1)
   (use util.list)
+  (use gauche.mop.singleton)
   (export <pg-driver>
 	  <pg-connection>
 	  <pg-result-set>
@@ -32,7 +33,7 @@
 ;; Loads extension
 (dynamic-load "dbd_pg")
 
-(define-class <pg-driver> (<dbi-driver>) ())
+(define-class <pg-driver> (<dbi-driver> <singleton-mixin>) ())
 
 (define-class <pg-connection> (<dbi-connection>)
   ((%handle :init-keyword :handle :init-value #f)))
