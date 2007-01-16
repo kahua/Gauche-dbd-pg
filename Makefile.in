@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.4 2005/11/08 08:17:50 shiro Exp $
+# $Id: Makefile.in,v 1.5 2007/01/16 09:26:20 bizenn Exp $
 #
 
 # General info
@@ -8,6 +8,7 @@ prefix      = @prefix@
 exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
+datarootdir = @datarootdir@
 datadir     = @datadir@
 srcdir      = @srcdir@
 VPATH       = $(srcdir)
@@ -54,6 +55,7 @@ all : $(TARGET)
 
 dbd_pg.$(SOEXT): $(dbd_pg_SRCS)
 	$(GAUCHE_PACKAGE) compile    \
+	   --cppflags="-DGAUCHE_API_0_8_8" \
 	   --cflags="$(PG_CFLAGS)"   \
 	   --ldflags="$(PG_LDFLAGS)" \
 	   --libs="$(PG_LIBS)"       \

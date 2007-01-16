@@ -1,3 +1,10 @@
+2007-01-16  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: Makefile.in
+	  Add datarootdir definition.
+	  Pass -DGAUCHE_API_0_8_8 as --cppflags to gauche-package
+	  for usage of new API.
+
 2007-01-07  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: dbd_pglib.stub
