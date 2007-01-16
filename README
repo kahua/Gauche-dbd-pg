@@ -1,5 +1,7 @@
 * Requirements
 
+** Gauche 0.8.8 or later.
+
 ** pg_config
 
 ./configure requires 'pg_config'.
