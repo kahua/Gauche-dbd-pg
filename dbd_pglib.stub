@@ -128,7 +128,11 @@
 ;; of the string if we have MB string.  I wrote this assuming they meant the
 ;; number of bytes.  --[SK]
 (define-cproc pq-escape-string (str::<string>)
-  (body "u_int size, rsize;"
+  (body "#if GAUCHE_API_0_95"
+        "ScmSize size, rsize;"
+        "#else"
+        "u_int size, rsize;"
+        "#endif"
         "const char *from = Scm_GetStringContent(str, &size, NULL, NULL);"
         "char *to = SCM_NEW_ATOMIC2(char*, size*2);"
         "rsize = PQescapeString(to, from, size);"

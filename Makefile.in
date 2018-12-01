@@ -55,7 +55,6 @@ all : $(TARGET)
 
 dbd_pg.$(SOEXT): $(dbd_pg_SRCS)
 	$(GAUCHE_PACKAGE) compile    \
-	   --cppflags="-DGAUCHE_API_0_8_8" \
 	   --cflags="$(PG_CFLAGS)"   \
 	   --ldflags="$(PG_LDFLAGS)" \
 	   --libs="$(PG_LIBS)"       \
