@@ -128,7 +128,9 @@
 ;; of the string if we have MB string.  I wrote this assuming they meant the
 ;; number of bytes.  --[SK]
 (define-cproc pq-escape-string (str::<string>)
-  (body "#if GAUCHE_API_0_95"
+  (body "#if GAUCHE_API_0_97 || GAUCHE_API_VERSION >= 97"
+        "ScmSmallInt size, rsize;"
+        "#elif GAUCHE_API_0_95"
         "ScmSize size, rsize;"
         "#else"
         "u_int size, rsize;"
