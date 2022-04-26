@@ -1,3 +1,7 @@
+2022-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* configure, package.scm: Modernize packaging and configuration.
+
 2022-04-23  Fabian Brosda <fabi3141@gmx.de>
 
 	* dbd_pglib.stub (pg-escape-string): Also make it work for
