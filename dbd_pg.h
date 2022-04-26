@@ -5,7 +5,6 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: dbd_pg.h,v 1.2 2005/09/10 12:16:47 shiro Exp $
  */
 
 /* Prologue */

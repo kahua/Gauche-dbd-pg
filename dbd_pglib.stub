@@ -5,7 +5,6 @@
 ;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbd_pglib.stub,v 1.5 2007/01/07 04:15:05 bizenn Exp $
 
 "
 #include \"dbd_pg.h\"

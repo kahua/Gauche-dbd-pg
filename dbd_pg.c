@@ -5,7 +5,6 @@
  *  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
  *  See COPYING for terms and conditions of using this software
  *
- * $Id: dbd_pg.c,v 1.3 2005/09/11 12:43:37 shiro Exp $
  */
 
 #include "dbd_pg.h"

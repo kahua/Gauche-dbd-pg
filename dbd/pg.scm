@@ -4,7 +4,6 @@
 ;;;  Copyright (c) 2003-2005 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: pg.scm,v 1.13 2006/06/13 00:15:07 bizenn Exp $
 
 (define-module dbd.pg
   (use gauche.sequence)
