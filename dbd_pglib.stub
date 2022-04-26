@@ -140,7 +140,7 @@
         "rsize = PQescapeString(to, from, size);"
         "SCM_RESULT = Scm_MakeString(to, rsize, -1, 0);"))
 
-;; For debugging 
+;; For debugging
 (define-cproc pq-trace (conn::<pg-conn> oport::<output-port>)
   (body <void>
         "FILE *fp;"

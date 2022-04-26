@@ -77,7 +77,7 @@ ScmObj Scm_Init_dbd_pg(void)
                                     NULL, pgresult_cleanup, 0);
 
     sym_closed = SCM_INTERN("closed?");
-    
+
     /* Register stub-generated procedures */
     Scm_Init_dbd_pglib(mod);
 }

@@ -1,7 +1,7 @@
 2022-04-23  Fabian Brosda <fabi3141@gmx.de>
 
 	* dbd_pglib.stub (pg-escape-string): Also make it work for
-          GAUCHE_API_VERSION 97 and newer.
+	  GAUCHE_API_VERSION 97 and newer.
 
 2018-11-30  Shiro Kawai  <shiro@acm.org>
 
@@ -70,4 +70,3 @@
 2005-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* adapted to the new DBI API.
-

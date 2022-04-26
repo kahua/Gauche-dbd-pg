@@ -13,8 +13,8 @@
   (use util.list)
   (use gauche.mop.singleton)
   (export <pg-driver>
-	  <pg-connection>
-	  <pg-result-set>
+          <pg-connection>
+          <pg-result-set>
           <pg-row>
 
           ;; low-level stuff
@@ -51,7 +51,7 @@
   ((%result-set :init-keyword :result-set)
    (%row-id     :init-keyword :row-id)))
 
-;; 
+;;
 (define-method dbi-make-connection ((d <pg-driver>)
                                     (options <string>)
                                     (option-alist <list>)
@@ -68,7 +68,7 @@
       ((get-keyword :username args #f) => (cut cons 'user <>))
       ((get-keyword :password args #f) => (cut cons 'password <>)))
      option-alist))
-                 
+
   (let* ((conn (make <pg-connection>
                  :driver-name d
                  :open        #t
@@ -187,5 +187,3 @@
 
 ;; Epilogue
 (provide "dbd/pg")
-
-

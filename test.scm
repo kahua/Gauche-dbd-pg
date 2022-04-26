@@ -46,7 +46,7 @@
          (dbi-execute query 30 "who's this?")
          #t))
 
-;; query 
+;; query
 (test* "dbi-do (select)" #t
        (begin
          (set! *res* (dbi-do *conn* "select * from test"))
@@ -86,8 +86,3 @@
 
 ;; epilogue
 (test-end)
-
-
-
-
-
