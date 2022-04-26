@@ -1,0 +1,43 @@
+#!/usr/bin/env gosh
+;;;
+;;; Configure Gauche-dbd-pg
+;;;
+
+(use gauche.configure)
+(use gauche.process)
+
+;; Here you can define handlers of configure arguments by cf-arg-enable
+;; and cf-arg-with.  Note that --with-local is handled implicitly if you use
+;; cf-init-gauche-extension.
+(cf-arg-with 'pg-config
+             (cf-help-string
+              "--with-pg-config=PATH"
+              "path to pg_config for finding the PostgreSQL client library")
+             (^[val] (cf-subst 'PG_CONFIG val)))
+
+;; Initialize configure.  This creates the global context, parses
+;; command-line args and sets up default values.
+(cf-init-gauche-extension)
+
+;; Postgresql parameters
+(unless (cf-ref 'PG_CONFIG #f)
+  (cf-path-prog 'PG_CONFIG "pg_config"))
+(if-let1 pg-config (cf-ref 'PG_CONFIG #f)
+  (let* ([pg-cflags  #"-I~(process-output->string `(,pg-config --includedir))"]
+         [pg-ldflags #"-L~(process-output->string `(,pg-config --libdir))"]
+         [pg-libs    (string-append
+                      "-lpq"
+                      (if (#/with-openssl/ (process-output->string `(,pg-config --configure)))
+                        " -lssl"
+                        ""))])
+    (cf-subst 'PG_CFLAGS pg-cflags)
+    (cf-subst 'PG_LIBS pg-libs)
+    (cf-subst 'PG_LDFLAGS pg-ldflags))
+  (cf-msg-error "Couldn't find pg_config"))
+
+;; Putput
+(cf-output-default)
+
+;; Local variables:
+;; mode: scheme
+;; end:

@@ -1,13 +1,12 @@
 * Requirements
 
-** Gauche 0.8.8 or later.
+** Gauche 0.9.8 or later.
 
 ** pg_config
 
-./configure requires 'pg_config'.
-please set path to 'pg_config', like that:
+./configure requires 'pg_config' program.  Make sure it is in the PATH,
+or you can give --with-pg-config=PATH to the configure program.
 
- export PATH=/usr/local/pgsql/bin:$PATH
 
 ** your default database
 
@@ -24,4 +23,3 @@ if it's not exist, you may make it like that:
  % make
  % make check
  % sudo make install
-
