@@ -57,7 +57,7 @@ dbd_pg.$(SOEXT): $(dbd_pg_SRCS)
 
 check : all
 	@rm -f test.log
-	$(GOSH) -I. test.scm > test.log
+	$(GOSH) -I. test/test.scm > test.log
 
 install : all
 	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)
