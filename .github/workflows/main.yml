@@ -1,8 +1,6 @@
-name: Build-test
+name: Build and test
 
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   build-and-test:
@@ -25,4 +23,4 @@ jobs:
       run: |
         ./configure
         make
-        make check
+        make -s check
