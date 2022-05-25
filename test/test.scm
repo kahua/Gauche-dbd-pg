@@ -77,6 +77,24 @@
                     (relation-ref *res* row "name")))
             *res*))
 
+;; direct access using pq-send-query and pq-get-result
+(let ([raw-conn (pg-connection-handle *conn*)])
+  (test* "pq-send-query"
+         1
+         (pq-send-query raw-conn
+                        "SELECT id FROM test WHERE name = 'yasuyuki'"))
+
+  (test* "pq-get-result"
+         `(,PGRES_TUPLES_OK "10")
+         (let* ([r (pq-get-result raw-conn)]
+                [s (pq-result-status r)])
+           (list s (pq-getvalue r 0 0))))
+
+  (test* "pq-get-result"
+         #f                             ;no more result
+         (pq-get-result raw-conn))
+  )
+
 ;; closing
 (test* "dbi-close (result)" #f
        (begin (dbi-close *res*) (dbi-open? *res*)))

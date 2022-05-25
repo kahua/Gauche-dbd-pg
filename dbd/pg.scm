@@ -18,6 +18,7 @@
 
           ;; low-level stuff
           <pg-conn> <pg-result>
+          pg-connection-handle
           pq-connectdb pq-finish pq-reset pq-db pq-user pq-pass pq-host
           pq-port pq-tty pq-options pq-status pq-error-message
           pq-backend-pid pq-exec pq-result-status pq-res-status
@@ -26,6 +27,11 @@
           pq-getvalue pq-getisnull pq-cmd-status pq-cmd-tuples pq-oid-status
           pq-clear pq-trace pq-untrace pq-set-notice-processor
           pq-finished? pq-cleared? pq-escape-string
+
+          PGRES_EMPTY_QUERY PGRES_COMMAND_OK PGRES_TUPLES_OK
+          PGRES_COPY_OUT PGRES_COPY_IN PGRES_COPY_IN
+          PGRES_NONFATAL_ERROR PGRES_FATAL_ERROR
+          pq-send-query pq-get-result
           ))
 (select-module dbd.pg)
 
@@ -36,6 +42,9 @@
 
 (define-class <pg-connection> (<dbi-connection>)
   ((%handle :init-keyword :handle :init-value #f)))
+(define (pg-connection-handle conn)     ;public accessor
+  (assume-type conn <pg-connection>)
+  (~ conn'%handle))
 
 (define-class <pg-result-set> (<relation> <sequence>)
   ((%pg-result :init-keyword :pg-result)
