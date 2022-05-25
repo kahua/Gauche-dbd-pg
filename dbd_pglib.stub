@@ -69,6 +69,16 @@
 (define-cproc pq-exec (conn::<pg-conn> query::<const-cstring>)
   (call <pg-result> "PQexec"))
 
+(define-cproc pq-send-query (conn::<pg-conn> command::<const-cstring>) ::<int>
+  PQsendQuery)
+;; pq-send-query-params
+;; pq-send-prepare
+;; pq-send-query-prepared
+;; pq-send-describe-prepared
+
+(define-cproc pq-get-result (conn::<pg-conn>) ::<pg-result>?
+  PQgetResult)
+
 (define-cproc pq-result-status (result::<pg-result>)
   (call <int> "PQresultStatus"))
 (define-cproc pq-res-status (status::<int>)
