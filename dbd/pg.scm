@@ -36,7 +36,10 @@
 (select-module dbd.pg)
 
 ;; Loads extension
-(dynamic-load "dbd_pg")
+(dynamic-load "dbd--pg")
+
+(print (with-module dbi <dbi-driver>))
+(print instance-of)
 
 (define-class <pg-driver> (<dbi-driver> <singleton-mixin>) ())
 

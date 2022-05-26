@@ -55,9 +55,9 @@ void PGMarkClosed(ScmObj obj)
 /*
  * Module initialization function.
  */
-extern void Scm_Init_dbd_pglib(ScmModule*);
+extern void Scm_Init_dbd_pglib(void);
 
-ScmObj Scm_Init_dbd_pg(void)
+ScmObj Scm_Init_dbd__pg(void)
 {
     ScmModule *mod;
 
@@ -78,5 +78,5 @@ ScmObj Scm_Init_dbd_pg(void)
     sym_closed = SCM_INTERN("closed?");
 
     /* Register stub-generated procedures */
-    Scm_Init_dbd_pglib(mod);
+    Scm_Init_dbd_pglib();
 }

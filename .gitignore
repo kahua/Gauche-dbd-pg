@@ -2,6 +2,7 @@ Gauche-dbd-pg.gpd
 Makefile
 VERSION
 config.log
+dbd_pglib.c
 test.log
 *.o
 *.so
