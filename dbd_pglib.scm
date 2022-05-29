@@ -66,16 +66,6 @@
 (define-cproc pq-exec (conn::<pg-conn> query::<const-cstring>) ::<pg-result>
   PQexec)
 
-(define-cproc pq-send-query (conn::<pg-conn> command::<const-cstring>) ::<int>
-  PQsendQuery)
-;; pq-send-query-params
-;; pq-send-prepare
-;; pq-send-query-prepared
-;; pq-send-describe-prepared
-
-(define-cproc pq-get-result (conn::<pg-conn>) ::<pg-result>?
-  PQgetResult)
-
 (define-cproc pq-result-status (result::<pg-result>) ::<int> PQresultStatus)
 (define-cproc pq-res-status (status::<int>) ::<const-cstring> PQresStatus)
 (define-cproc pq-result-error-message (result::<pg-result>) ::<const-cstring>
@@ -104,6 +94,17 @@
 (define-cproc pq-cmd-status (result::<pg-result>) ::<const-cstring> PQcmdStatus)
 (define-cproc pq-cmd-tuples (result::<pg-result>) ::<const-cstring> PQcmdTuples)
 (define-cproc pq-oid-status (result::<pg-result>) ::<const-cstring> PQoidStatus)
+
+;; Async Query
+
+(define-cproc pq-send-query (conn::<pg-conn> command::<const-cstring>) ::<int>
+  PQsendQuery)
+;; pq-send-query-params
+;; pq-send-prepare
+;; pq-send-query-prepared
+;; pq-send-describe-prepared
+
+(define-cproc pq-get-result (conn::<pg-conn>) ::<pg-result>? PQgetResult)
 
 ;; NB: The following two functions refers to result_scm, the argument
 ;; before unpacking PGResult* result.  Referring to the argument before

@@ -31,7 +31,7 @@
   :licenses ("BSD")
 
   ;; Homepage URL, if any.
-  ; :homepage "http://example.com/Gauche-dbd-mysql/"
+  :homepage "https://github.com/kahua/Gauche-dbd-pg"
 
   ;; Repository URL, e.g. github
   :repository "https://github.com/kahua/Gauche-dbd-pg.git"
