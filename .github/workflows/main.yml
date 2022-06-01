@@ -11,6 +11,7 @@ jobs:
     - uses: shirok/setup-gauche@v1
     - name: Install and setup postgresql
       run: |
+        sudo apt update
         sudo apt install -y libpq-dev libssl-dev postgresql postgresql-client
         sudo service postgresql start
         sudo -u postgres createuser runner
