@@ -31,7 +31,9 @@
           PGRES_EMPTY_QUERY PGRES_COMMAND_OK PGRES_TUPLES_OK
           PGRES_COPY_OUT PGRES_COPY_IN PGRES_COPY_IN
           PGRES_NONFATAL_ERROR PGRES_FATAL_ERROR
-          pq-send-query pq-get-result
+          PGRES_COPY_BOTH PGRES_SINGLE_TUPLE
+          pq-send-query pq-set-single-row-mode
+          pq-get-result pq-get-cancel pq-cancel
           ))
 (select-module dbd.pg)
 

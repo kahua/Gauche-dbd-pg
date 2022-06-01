@@ -15,6 +15,8 @@
                     "PG_CONN_P" "PG_CONN_UNBOX" "PG_CONN_BOX")
  (declare-stub-type <pg-result> "PGresult*" "PostgreSQL Result"
                     "PG_RESULT_P" "PG_RESULT_UNBOX" "PG_RESULT_BOX")
+ (declare-stub-type <pg-cancel> "PGcancel*" "PostgreSQL Cancel"
+                    "PG_CANCEL_P" "PG_CANCEL_UNBOX" "PG_CANCEL_BOX")
  )
 
 ;; ConnStatusType from libpq-fe.h
@@ -37,6 +39,8 @@
 (define-enum PGRES_BAD_RESPONSE)
 (define-enum PGRES_NONFATAL_ERROR)
 (define-enum PGRES_FATAL_ERROR)
+(define-enum PGRES_COPY_BOTH)
+(define-enum PGRES_SINGLE_TUPLE)
 
 ;; Connection
 (define-cproc pq-connectdb (conninfo::<const-cstring>) ::<pg-conn> PQconnectdb)
@@ -99,12 +103,19 @@
 
 (define-cproc pq-send-query (conn::<pg-conn> command::<const-cstring>) ::<int>
   PQsendQuery)
+(define-cproc pq-set-single-row-mode (conn::<pg-conn>) ::<int>
+  PQsetSingleRowMode)
 ;; pq-send-query-params
 ;; pq-send-prepare
 ;; pq-send-query-prepared
 ;; pq-send-describe-prepared
 
 (define-cproc pq-get-result (conn::<pg-conn>) ::<pg-result>? PQgetResult)
+(define-cproc pq-get-cancel (conn::<pg-conn>) ::<pg-cancel> PQgetCancel)
+(define-cproc pq-cancel (can::<pg-cancel>) ::(<int> <top>)
+  (let* ([buf::(.array char (256))]
+         [r::int (PQcancel can buf 256)])
+    (return r (?: r SCM_FALSE (SCM_MAKE_STR_COPYING buf)))))
 
 ;; NB: The following two functions refers to result_scm, the argument
 ;; before unpacking PGResult* result.  Referring to the argument before

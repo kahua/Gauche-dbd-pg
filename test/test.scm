@@ -79,19 +79,43 @@
 
 ;; direct access using pq-send-query and pq-get-result
 (let ([raw-conn (pg-connection-handle *conn*)])
-  (test* "pq-send-query"
+  (test* "direct access 1 - pq-send-query"
          1
          (pq-send-query raw-conn
                         "SELECT id FROM test WHERE name = 'yasuyuki'"))
 
-  (test* "pq-get-result"
+  (test* "direct access 1 - pq-get-result"
          `(,PGRES_TUPLES_OK "10")
          (let* ([r (pq-get-result raw-conn)]
                 [s (pq-result-status r)])
            (list s (pq-getvalue r 0 0))))
 
-  (test* "pq-get-result"
+  (test* "direct access 1 - pq-get-result"
          #f                             ;no more result
+         (pq-get-result raw-conn))
+  )
+
+;; direct access with pq-set-single-row-mode
+(let ([raw-conn (pg-connection-handle *conn*)])
+  (pq-send-query raw-conn "SELECT id FROM test ORDER BY id")
+  (test* "direct access 2 - pq-set-single-row-mode" 1
+         (pq-set-single-row-mode raw-conn))
+  (test* "direct access 2 - getting values"
+         `(,PGRES_SINGLE_TUPLE "10")
+         (let1 r (pq-get-result raw-conn)
+           (list (pq-result-status r) (pq-getvalue r 0 0))))
+  (test* "direct access 2 - getting values"
+         `(,PGRES_SINGLE_TUPLE "20")
+         (let1 r (pq-get-result raw-conn)
+           (list (pq-result-status r) (pq-getvalue r 0 0))))
+  (test* "direct access 2 - getting values"
+         `(,PGRES_SINGLE_TUPLE "30")
+         (let1 r (pq-get-result raw-conn)
+           (list (pq-result-status r) (pq-getvalue r 0 0))))
+  ;; NB: This is supposed to be #f, but we get an empty result.
+  ;; Need to investigate.
+  '(test* "direct access 2 - end of rows"
+         #f
          (pq-get-result raw-conn))
   )
 

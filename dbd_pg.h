@@ -36,6 +36,11 @@ extern ScmClass *PGResultClass;
 #define PG_RESULT_UNBOX(obj)  SCM_FOREIGN_POINTER_REF(PGresult*, obj)
 #define PG_RESULT_BOX(res)    Scm_MakeForeignPointer(PGResultClass, res)
 
+extern ScmClass *PGCancelClass;
+#define PG_CANCEL_P(obj)      SCM_XTYPEP(obj, PGCancelClass)
+#define PG_CANCEL_UNBOX(obj)  SCM_FOREIGN_POINTER_REF(PGcancel*, obj)
+#define PG_CANCEL_BOX(can)    Scm_MakeForeignPointer(PGCancelClass, can)
+
 extern int  PGClosedP(ScmObj obj);
 extern void PGMarkClosed(ScmObj obj);
 

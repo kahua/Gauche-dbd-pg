@@ -16,10 +16,12 @@
 /* Class pointers initialized by Scm_Init_dbd_pg */
 ScmClass *PGConnClass;
 ScmClass *PGResultClass;
+ScmClass *PGCancelClass;
 
 static void pgconn_cleanup(ScmObj obj)
 {
     if (!PGClosedP(obj)) {
+        PGMarkClosed(obj);
         PGconn *c = PG_CONN_UNBOX(obj);
         PQfinish(c);
     }
@@ -28,10 +30,21 @@ static void pgconn_cleanup(ScmObj obj)
 static void pgresult_cleanup(ScmObj obj)
 {
     if (!PGClosedP(obj)) {
+        PGMarkClosed(obj);
         PGresult *r = PG_RESULT_UNBOX(obj);
         PQclear(r);
     }
 }
+
+static void pgcancel_cleanup(ScmObj obj)
+{
+    if (!PGClosedP(obj)) {
+        PGMarkClosed(obj);
+        PGcancel *c = PG_CANCEL_UNBOX(obj);
+        PQfreeCancel(c);
+    }
+}
+
 
 /*
  * Open/close status management
@@ -74,6 +87,10 @@ ScmObj Scm_Init_dbd__pg(void)
     PGResultClass =
         Scm_MakeForeignPointerClass(mod, "<pg-result>",
                                     NULL, pgresult_cleanup, 0);
+
+    PGCancelClass =
+        Scm_MakeForeignPointerClass(mod, "<pg-cancel>",
+                                    NULL, pgcancel_cleanup, 0);
 
     sym_closed = SCM_INTERN("closed?");
 
