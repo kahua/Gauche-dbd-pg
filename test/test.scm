@@ -112,11 +112,15 @@
          `(,PGRES_SINGLE_TUPLE "30")
          (let1 r (pq-get-result raw-conn)
            (list (pq-result-status r) (pq-getvalue r 0 0))))
-  ;; NB: This is supposed to be #f, but we get an empty result.
-  ;; Need to investigate.
-  '(test* "direct access 2 - end of rows"
+  (test* "direct access 2 - end of rows"
+         `(,PGRES_TUPLES_OK 0)
+         (let1 r (pq-get-result raw-conn)
+           (list (pq-result-status r) (pq-ntuples r))))
+  (test* "direct access 2 - fetch until NULL"
          #f
-         (pq-get-result raw-conn))
+         (let loop ()
+           (and-let1 r (pq-get-result raw-conn)
+             (loop))))
   )
 
 ;; closing
