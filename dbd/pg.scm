@@ -6,11 +6,10 @@
 ;;;
 
 (define-module dbd.pg
-  (use gauche.sequence)
   (use dbi)
-  (use srfi-1)
-  (use util.list)
   (use gauche.mop.singleton)
+  (use gauche.sequence)
+  (use scheme.list)
   (export <pg-driver>
           <pg-connection>
           <pg-result-set>
@@ -194,6 +193,3 @@
 (define-method dbi-close ((connection <pg-connection>))
   (unless (pq-finished? (slot-ref connection '%handle))
     (pq-finish (slot-ref connection '%handle))))
-
-;; Epilogue
-(provide "dbd/pg")

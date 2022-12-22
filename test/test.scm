@@ -2,9 +2,9 @@
 ;;; Test dbd.pg
 ;;;
 
-(use gauche.test)
 (use gauche.collection)
-(use srfi-1)
+(use gauche.test)
+(use scheme.list)
 (use srfi-13)
 
 (test-start "dbd.pg")
